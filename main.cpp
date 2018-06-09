@@ -306,9 +306,9 @@ bool crossFace(POINT & A, POINT & B, POINT & C, double x1, double x2, double y1,
 	if (crossPnt.x == -1000) {
 		return true;
 	}
-	bool xInCube = (x1 == x2) ||((crossPnt.x >= x1 - 0.01) && (crossPnt.x <= x2 + 0.01)),
-		yInCube = (y1 == y2) || ((crossPnt.y >= y1 - 0.01) && (crossPnt.y <= y2 + 0.01)),
-		zInCube = (z1 == z2) || ((crossPnt.z >= z1 - 0.01) && (crossPnt.z <= z2 + 0.01));
+	bool xInCube = (x1 == x2) ||((crossPnt.x >= x1) && (crossPnt.x <= x2)),
+		yInCube = (y1 == y2) || ((crossPnt.y >= y1) && (crossPnt.y <= y2)),
+		zInCube = (z1 == z2) || ((crossPnt.z >= z1) && (crossPnt.z <= z2));
 	return xInCube && yInCube && zInCube;
 }
 
@@ -420,72 +420,17 @@ bool pInCube(Node* curNode, POINT &p) {
 	return xInCube && yInCube && zInCube;
 }
 
-int difSideTrngl(POINT p1, POINT p2, POINT p3, POINT pn1, POINT pn2, POINT pn3) {
-	double x21 = p2.x - p1.x,
-		y21 = p2.y - p1.y,
-		z21 = p2.z - p1.z,
-		x31 = p3.x - p1.x,
-		y31 = p3.y - p1.y,
-		z31 = p3.z - p1.z,
-		A = (y21 * z31 - z21 * y31),
-		B = (z21 * x31 - x21 * z31),
-		C = (x21 * y31 - y21 * x31),
-		D = -p1.x * A - p1.y * B - p1.z * C,
-		sign1 = (A * pn1.x + B * pn1.y + C * pn1.z + D),
-		sign2 = (A * pn2.x + B * pn2.y + C * pn2.z + D),
-		sign3 = (A * pn3.x + B * pn3.y + C * pn3.z + D);
-	return (sign1 * sign2 <= 0) || (sign1 * sign3 <= 0);
-}
-
-int difSideRctngl(POINT p1, POINT p2, POINT p3, POINT pn1, POINT pn2, POINT pn3, POINT pn4) {
-	double x21 = p2.x - p1.x,
-		y21 = p2.y - p1.y,
-		z21 = p2.z - p1.z,
-		x31 = p3.x - p1.x,
-		y31 = p3.y - p1.y,
-		z31 = p3.z - p1.z,
-		A = (y21 * z31 - z21 * y31),
-		B = (z21 * x31 - x21 * z31),
-		C = (x21 * y31 - y21 * x31),
-		D = -p1.x * A - p1.y * B - p1.z * C,
-		sign1 = (A * pn1.x + B * pn1.y + C * pn1.z + D),
-		sign2 = (A * pn2.x + B * pn2.y + C * pn2.z + D),
-		sign3 = (A * pn3.x + B * pn3.y + C * pn3.z + D),
-		sign4 = (A * pn4.x + B * pn4.y + C * pn4.z + D);
-	return (sign1 * sign2 <= 0) || (sign2 * sign3 <= 0) || (sign3 * sign4 <= 0) || (sign4 * sign1 <= 0);
-}
-
 bool trnglInCube(Node* curNode, TRIANGLE &trngl, vector<POINT> &vertex) {
 	POINT p1 = vertex[trngl.p1],
 		p2 = vertex[trngl.p2],
 		p3 = vertex[trngl.p3];
-	if (pInCube(curNode, p1) || pInCube(curNode, p2) || pInCube(curNode, p3)) {
-		return true;
-	}
-	POINT blt = { curNode->back, curNode->left, curNode->top },
-		blb = { curNode->back, curNode->left, curNode->bottom },
-		brt = { curNode->back, curNode->right, curNode->top },
-		brb = { curNode->back, curNode->right, curNode->bottom },
-		flt = { curNode->front, curNode->left, curNode->top },
-		flb = { curNode->front, curNode->left, curNode->bottom },
-		frt = { curNode->front, curNode->right, curNode->top },
-		frb = { curNode->front, curNode->right, curNode->bottom };
-	bool backCrossed = difSideTrngl(blt, blb, brt, p1, p2, p3) && difSideRctngl(p1, p2, p3, blt, blb, brt, brb),
-		frontCrossed = difSideTrngl(flt, flb, frt, p1, p2, p3) && difSideRctngl(p1, p2, p3, flt, flb, frt, frb),
-		leftCrossed = difSideTrngl(blt, blb, flt, p1, p2, p3) && difSideRctngl(p1, p2, p3, blt, blb, flt, flb),
-		rightCrossed = difSideTrngl(brt, brb, frt, p1, p2, p3) && difSideRctngl(p1, p2, p3, brt, brb, frt, frb),
-		bottomCrossed = difSideTrngl(blb, brb, flb, p1, p2, p3) && difSideRctngl(p1, p2, p3, blb, brb, flb, frb),
-		topCrossed = difSideTrngl(blt, brt, flt, p1, p2, p3) && difSideRctngl(p1, p2, p3, blt, brt, flt, frt);
-	if (backCrossed || frontCrossed || leftCrossed || rightCrossed || bottomCrossed || topCrossed) {
-		return true;
-	}
-	return false;
+	return (pInCube(curNode, p1) || pInCube(curNode, p2) || pInCube(curNode, p3));
 }
 
-void disassembleTrngls(Node* &curNode, vector<TRIANGLE> &triangle, vector<POINT> &vertex, int depth, int maxDepth) {
+void disassembleTrngls(Node* &curNode, vector<TRIANGLE> &triangle, vector<POINT> &vertex, int depth, int maxDepth, char axis) {
 	curNode->numOfTrngls = curNode->triangleCount.size();
-	for (int i = 0; i < 8; i++) {
-		Node *temp = createNode(curNode, i);
+	for (int i = 0; i < 2; i++) {
+		Node *temp = createNode(curNode, i, axis);
 		for (int j = 0; j < curNode->numOfTrngls; j++) {
 			if (trnglInCube(curNode->Sons[i], triangle[curNode->triangleCount[j]], vertex)) {
 				curNode->Sons[i]->triangleCount.push_back(curNode->triangleCount[j]);
@@ -498,19 +443,22 @@ void disassembleTrngls(Node* &curNode, vector<TRIANGLE> &triangle, vector<POINT>
 	if (curNode->numOfSons > 0) {
 		curNode->triangleCount.clear();
 	}
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < 2; i++) {
 		if (curNode->Sons[i]) {
 			if (depth > maxDepth) {
 				curNode->Sons[i]->numOfTrngls = curNode->Sons[i]->triangleCount.size();
 			}
 			else {
-				disassembleTrngls(curNode->Sons[i], triangle, vertex, depth + 1, maxDepth);
+				char next;
+				if (axis == 'z') next = 'x';
+				else next = axis + 1;
+				disassembleTrngls(curNode->Sons[i], triangle, vertex, depth + 1, maxDepth, next);
 			}
 		}
 	}
 }
 
-PIXELDATA getColor(TRIANGLE &trngl, POINT &vecLight, vector<TRIANGLE> &triangle, vector<POINT> &vertex, Node* root) {
+PIXELDATA getColor(TRIANGLE &trngl, POINT &vecLight, vector<TRIANGLE> &triangle, vector<POINT> &vertex, Node* root, POINT &vecOfView) {
 	POINT p1, p2, p3, pm, po, v1, v2, n;
 	p1 = vertex[trngl.p1];
 	p2 = vertex[trngl.p2];
@@ -534,12 +482,13 @@ PIXELDATA getColor(TRIANGLE &trngl, POINT &vecLight, vector<TRIANGLE> &triangle,
 	n.x /= lngth;
 	n.y /= lngth;
 	n.z /= lngth;
-	if (n.y > 0) {
+	double cos = (vecOfView.x * n.x + vecOfView.y * n.y + vecOfView.z * n.z) / sqrt(pow(vecOfView.x, 2) + pow(vecOfView.y, 2) + pow(vecOfView.z, 2));
+	if (cos < 0) {
 		n.x *= -1;
 		n.y *= -1;
 		n.z *= -1;
 	}
-	PIXELDATA res = { abs(n.y) * 255, abs(n.z) * 255, abs(n.x) * 255 };
+	PIXELDATA res = { (n.y * 0.5 + 0.5) * 255, (n.z * 0.5 + 0.5) * 255, (n.x * 0.5 + 0.5) * 255 };
 	/*PIXELDATA res;
 	if (clsstTrngl(root, n, po, triangle, vertex) == -1) {
 		double cos = (vecLight.x * n.x + vecLight.y * n.y + vecLight.z * n.z) / sqrt(pow(vecLight.x, 2) + pow(vecLight.y, 2) + pow(vecLight.z, 2));
@@ -558,7 +507,7 @@ PIXELDATA getColor(TRIANGLE &trngl, POINT &vecLight, vector<TRIANGLE> &triangle,
 
 void calcTrnglsColor(vector<TRIANGLE> &triangle, vector<POINT> &vertex, vector<PIXELDATA> &trnglColor, POINT &pntOfView, POINT &vecOfView, POINT &vecLight, Node* root) {
 	for (int i = 0; i < triangle.size(); i++) {
-		trnglColor.push_back(getColor(triangle[i], vecLight, triangle, vertex, root));
+		trnglColor.push_back(getColor(triangle[i], vecLight, triangle, vertex, root, vecOfView));
 	}
 }
 
@@ -589,8 +538,8 @@ POINT findVec(POINT & vecOfView, POINT & pntOfView, int xp, int yp) {
 	basicX.x *= k, basicX.y *= k, basicX.z *= k;
 
 	POINT cnvrtP;
-	cnvrtP.x = ((double)xp - 960) / 1000;
-	cnvrtP.y = (540 - (double)yp) / 1000;
+	cnvrtP.x = ((double)xp - 150) / 200;
+	cnvrtP.y = (150 - (double)yp) / 200;
 	cnvrtP.z = 0;
 
 	double m00 = basicX.x,
@@ -659,16 +608,16 @@ int main() {
 	vector<POINT> vertex, normal;
 	vector<TRIANGLE> triangle;
 	vector<PIXELDATA> trnglColor;
-	POINT pntOfView = { 0.1, -1.1, 0.1 }, vecOfView = { -0.1, 1, -0.1 }, vecLight = { 1, 1, 1 };
-	int maxDepth = 0;
+	POINT pntOfView = { 0.1, 1.1, 0.1 }, vecOfView = { -0.1, -1, -0.1 }, vecLight = { 1, 1, 1 };
+	int maxDepth = 3;
 	readObj(vertex, normal, triangle);
-	Node* root = createNode(NULL, 0);
+	Node* root = createNode(NULL, 0, 'z');
 	for (int i = 0; i < triangle.size(); i++) {
 		root->triangleCount.push_back(i);
 	}
 	getSpace(vertex, root);
 	calcTrnglsColor(triangle, vertex, trnglColor, pntOfView, vecOfView, vecLight, root);
-	disassembleTrngls(root, triangle, vertex, 0, maxDepth);
+	disassembleTrngls(root, triangle, vertex, 0, maxDepth, 'x');
 	cout << 1;
 	createBMP(vecLight, pntOfView, vecOfView, root, triangle, vertex, trnglColor);
 	system("pause");
